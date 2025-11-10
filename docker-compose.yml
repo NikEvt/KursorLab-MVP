@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: nginx_reverse_proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - streamlit
+    networks:
+      - app-network
+
+  streamlit:
+    build: .
+    container_name: streamlit_app
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./app:/app               # Live sync of code
+      - .env:/app/.env           # .env file into container
+      - ./.streamlit:/app/.streamlit
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  db:
+      image: postgres:15
+      container_name: postgres_db
+      ports:
+        - "5432:5432"
+      environment:
+        POSTGRES_DB: ${POSTGRES_DB}
+        POSTGRES_USER: ${POSTGRES_USER}
+        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      volumes:
+        - pgdata:/var/lib/postgresql/data
+      networks:
+        - app-network
+
+networks:
+  app-network:
+
+volumes:
+  pgdata:
